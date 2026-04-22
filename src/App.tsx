@@ -1,0 +1,421 @@
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import { analyzeDuctRoutes, type RouteAnalysisResult } from "./calc";
+import { type NetworkComponent } from "./components";
+import { type DuctNode } from "./core/nodes";
+import { Canvas2D } from "./ui/canvas2d";
+import { Controls } from "./ui/controls";
+import {
+  beginDuctDraft,
+  buildGraphFromEditorDocument,
+  completeDuctDraft,
+  createInitialEditorDocument,
+  deleteSelection,
+  findComponentById,
+  findNodeById,
+  placeComponentAtPoint,
+  type DuctDraft,
+  type EditorDocument,
+  type EditorSelection,
+  type ToolMode,
+  updateComponentInDocument,
+  updateNodeInDocument
+} from "./ui/editorState";
+import { Sidebar } from "./ui/sidebar";
+import { View3D } from "./view3d/View3D";
+
+function App() {
+  const [document, setDocument] = useState<EditorDocument>(
+    createInitialEditorDocument()
+  );
+  const [activeTool, setActiveTool] = useState<ToolMode>("select");
+  const [selection, setSelection] = useState<EditorSelection>(null);
+  const [ductDraft, setDuctDraft] = useState<DuctDraft | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<{
+    x: number;
+    y: number;
+    z: number;
+  } | null>(null);
+  const [notice, setNotice] = useState(
+    "Place an AHU, add terminals, and draw ducts between snapped points."
+  );
+  const deferredDocument = useDeferredValue(document);
+
+  let routeAnalysis: RouteAnalysisResult | null = null;
+  let analysisError: string | null = null;
+
+  try {
+    const graph = buildGraphFromEditorDocument(deferredDocument);
+
+    if (graph.getAhu() && graph.getTerminals().length > 0) {
+      routeAnalysis = analyzeDuctRoutes(graph);
+    }
+  } catch (error) {
+    analysisError =
+      error instanceof Error ? error.message : "Analysis is unavailable.";
+  }
+
+  const selectedNode =
+    selection?.kind === "node" ? findNodeById(document, selection.id) : null;
+  const selectedComponent =
+    selection?.kind === "component"
+      ? findComponentById(document, selection.id)
+      : null;
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key !== "Delete" && event.key !== "Backspace") {
+        return;
+      }
+
+      if (!selection) {
+        return;
+      }
+
+      event.preventDefault();
+      handleDeleteSelection();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
+  function applyDocumentState(
+    nextDocument: EditorDocument,
+    nextSelection: EditorSelection = selection,
+    nextDraft: DuctDraft | null = ductDraft
+  ): void {
+    startTransition(() => {
+      setDocument(nextDocument);
+      setSelection(nextSelection);
+      setDuctDraft(nextDraft);
+    });
+  }
+
+  function handleToolChange(tool: ToolMode): void {
+    setActiveTool(tool);
+
+    if (tool !== "duct") {
+      setDuctDraft(null);
+    }
+
+    setNotice(
+      tool === "duct"
+        ? "Click one snapped point to start a duct, then click another to finish it."
+        : "Selection updates the properties panel and analysis sidebar."
+    );
+  }
+
+  function handleCanvasPoint(point: { x: number; y: number; z: number }): void {
+    try {
+      if (activeTool === "select") {
+        setSelection(null);
+        setNotice("Selection cleared.");
+
+        return;
+      }
+
+      if (activeTool === "duct") {
+        if (!ductDraft) {
+          setDuctDraft(beginDuctDraft(document, point));
+          setSelection(null);
+          setNotice("Duct start point locked. Pick the end point.");
+
+          return;
+        }
+
+        const result = completeDuctDraft(document, ductDraft, point);
+
+        applyDocumentState(result.document, result.selection, null);
+        setNotice("Duct created.");
+
+        return;
+      }
+
+      const result = placeComponentAtPoint(document, activeTool, point);
+
+      applyDocumentState(result.document, result.selection, null);
+      setNotice("Component placed.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Edit failed.");
+    }
+  }
+
+  function handleDeleteSelection(): void {
+    if (!selection) {
+      return;
+    }
+
+    const nextDocument = deleteSelection(document, selection);
+
+    applyDocumentState(nextDocument, null, null);
+    setNotice("Selection deleted.");
+  }
+
+  function handleCancelDuctDraft(): void {
+    setDuctDraft(null);
+    setNotice("Duct draft cancelled.");
+  }
+
+  function handleNodeLabelChange(value: string): void {
+    if (!selectedNode) {
+      return;
+    }
+
+    applyDocumentState(
+      updateNodeInDocument(document, selectedNode.id, (node) => ({
+        ...node,
+        metadata: {
+          ...node.metadata,
+          label: value
+        }
+      }))
+    );
+  }
+
+  function handleComponentLabelChange(value: string): void {
+    if (!selectedComponent) {
+      return;
+    }
+
+    applyDocumentState(
+      updateComponentInDocument(document, selectedComponent.id, (component) => {
+        switch (component.type) {
+          case "ahu":
+            return {
+              ...component,
+              metadata: {
+                ...component.metadata,
+                label: value
+              }
+            };
+          case "terminal":
+            return {
+              ...component,
+              metadata: {
+                ...component.metadata,
+                label: value
+              }
+            };
+          case "ductSegment":
+            return {
+              ...component,
+              metadata: {
+                ...component.metadata,
+                label: value
+              }
+            };
+        }
+      })
+    );
+  }
+
+  function handleAhuSystemTypeChange(
+    value: "supply" | "exhaust" | "mixed"
+  ): void {
+    if (selectedComponent?.type !== "ahu") {
+      return;
+    }
+
+    applyDocumentState(
+      updateComponentInDocument(document, selectedComponent.id, (component) =>
+        component.type === "ahu"
+          ? {
+              ...component,
+              metadata: {
+                ...component.metadata,
+                systemType: value
+              }
+            }
+          : component
+      )
+    );
+  }
+
+  function handleTerminalFlowRateChange(value: number): void {
+    if (selectedComponent?.type !== "terminal" || !Number.isFinite(value) || value <= 0) {
+      return;
+    }
+
+    applyDocumentState(
+      updateComponentInDocument(document, selectedComponent.id, (component) =>
+        component.type === "terminal"
+          ? {
+              ...component,
+              flow: {
+                designFlowRateLps: value,
+                actualFlowRateLps: value
+              }
+            }
+          : component
+      )
+    );
+  }
+
+  function handleTerminalTypeChange(
+    value: "supply" | "exhaust" | "outdoor" | "exhaustAir"
+  ): void {
+    if (selectedComponent?.type !== "terminal") {
+      return;
+    }
+
+    applyDocumentState(
+      updateComponentInDocument(document, selectedComponent.id, (component) =>
+        component.type === "terminal"
+          ? {
+              ...component,
+              metadata: {
+                ...component.metadata,
+                terminalType: value
+              }
+            }
+          : component
+      )
+    );
+  }
+
+  function handleDuctDiameterChange(value: number): void {
+    if (
+      selectedComponent?.type !== "ductSegment" ||
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
+      return;
+    }
+
+    applyDocumentState(
+      updateComponentInDocument(document, selectedComponent.id, (component) =>
+        component.type === "ductSegment"
+          ? {
+              ...component,
+              geometry: {
+                ...component.geometry,
+                diameterMm: value
+              }
+            }
+          : component
+      )
+    );
+  }
+
+  function handleDuctLocalLossChange(value: number): void {
+    if (
+      selectedComponent?.type !== "ductSegment" ||
+      !Number.isFinite(value) ||
+      value < 0
+    ) {
+      return;
+    }
+
+    applyDocumentState(
+      updateComponentInDocument(document, selectedComponent.id, (component) =>
+        component.type === "ductSegment"
+          ? {
+              ...component,
+              metadata: {
+                ...component.metadata,
+                localLossCoefficient: value
+              }
+            }
+          : component
+      )
+    );
+  }
+
+  const ductCount = document.components.filter(
+    (component) => component.type === "ductSegment"
+  ).length;
+  const terminalCount = document.components.filter(
+    (component) => component.type === "terminal"
+  ).length;
+
+  return (
+    <main className="app-shell">
+      <section className="hero hero-editor">
+        <div>
+          <p className="eyebrow">HVAC duct design tool</p>
+          <h1>Tasapainotus</h1>
+          <p className="lede">
+            Draw a snapped duct network, inspect the live graph-backed model,
+            and surface the critical path while you build.
+          </p>
+        </div>
+        <article className="notice-card" aria-live="polite">
+          <p className="section-kicker">Editor status</p>
+          <strong>{notice}</strong>
+          <span>
+            Geometry snaps to 10 cm and every edit is translated back into the
+            engineering graph.
+          </span>
+        </article>
+      </section>
+
+      <Controls
+        activeTool={activeTool}
+        hasSelection={selection !== null}
+        ductDraftActive={ductDraft !== null}
+        onSelectTool={handleToolChange}
+        onDeleteSelection={handleDeleteSelection}
+        onCancelDuctDraft={handleCancelDuctDraft}
+      />
+
+      <section className="workspace">
+        <div className="workspace-main">
+          <Canvas2D
+            document={document}
+            activeTool={activeTool}
+            selection={selection}
+            ductDraft={ductDraft}
+            hoverPoint={hoverPoint}
+            onHoverPointChange={setHoverPoint}
+            onCanvasPoint={handleCanvasPoint}
+            onSelectionChange={setSelection}
+          />
+          <View3D
+            document={deferredDocument}
+            criticalPath={routeAnalysis?.criticalPath ?? null}
+          />
+        </div>
+
+        <Sidebar
+          documentCounts={{
+            nodes: document.nodes.length,
+            ducts: ductCount,
+            terminals: terminalCount
+          }}
+          analysis={routeAnalysis}
+          analysisError={analysisError}
+          selectedNode={selectedNode}
+          selectedComponent={selectedComponent}
+          onNodeLabelChange={handleNodeLabelChange}
+          onComponentLabelChange={handleComponentLabelChange}
+          onAhuSystemTypeChange={handleAhuSystemTypeChange}
+          onTerminalFlowRateChange={handleTerminalFlowRateChange}
+          onTerminalTypeChange={handleTerminalTypeChange}
+          onDuctDiameterChange={handleDuctDiameterChange}
+          onDuctLocalLossChange={handleDuctLocalLossChange}
+        />
+      </section>
+
+      <section className="workflow-strip" aria-label="Workflow guidance">
+        <article>
+          <p className="section-kicker">Quick start</p>
+          <strong>1. Place an AHU</strong>
+          <span>Use the toolbar and click a snapped point on the canvas.</span>
+        </article>
+        <article>
+          <p className="section-kicker">Build branches</p>
+          <strong>2. Place terminals and draw ducts</strong>
+          <span>Ducts auto-create nodes and reuse existing snapped nodes.</span>
+        </article>
+        <article>
+          <p className="section-kicker">Inspect results</p>
+          <strong>3. Track the critical path</strong>
+          <span>The sidebar updates route pressure loss as the network changes.</span>
+        </article>
+      </section>
+    </main>
+  );
+}
+
+export default App;

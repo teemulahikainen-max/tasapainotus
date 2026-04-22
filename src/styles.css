@@ -1,0 +1,586 @@
+:root {
+  color-scheme: light;
+  --bg-ink: #102432;
+  --bg-deep: #0d2432;
+  --bg-slate: #123548;
+  --panel: rgba(248, 252, 254, 0.84);
+  --panel-strong: rgba(255, 255, 255, 0.92);
+  --line: rgba(22, 63, 85, 0.16);
+  --accent: #e5673a;
+  --accent-soft: #ffd4c6;
+  --sea: #2c819c;
+  --sea-soft: #d4eef3;
+  --terminal: #134c5e;
+  --muted: #617f8b;
+  font-family: "Aptos", "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--bg-ink);
+  background:
+    radial-gradient(circle at top left, rgba(233, 125, 72, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(73, 146, 171, 0.24), transparent 32%),
+    linear-gradient(180deg, #eef4f7 0%, #d8e6eb 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  width: min(1480px, calc(100% - 1.5rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+}
+
+.hero {
+  padding: 1rem 0 1.4rem;
+}
+
+.eyebrow,
+.section-label,
+.section-kicker {
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.hero h1,
+.notice-card strong,
+.tool-panel h2,
+.editor-stage h2,
+.analysis-sidebar h3,
+.workflow-strip strong {
+  font-family: "Bahnschrift", "Trebuchet MS", sans-serif;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(3.1rem, 7vw, 5.4rem);
+  line-height: 0.95;
+}
+
+.lede {
+  max-width: 44rem;
+  margin: 1.25rem 0 0;
+  font-size: 1.15rem;
+  color: #24475a;
+}
+
+.hero-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.notice-card,
+.tool-panel,
+.editor-stage,
+.analysis-sidebar,
+.workflow-strip article {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 0 18px 40px rgba(22, 45, 57, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.notice-card {
+  padding: 1.2rem 1.2rem 1.1rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.notice-card strong {
+  font-size: 1.18rem;
+}
+
+.notice-card span {
+  color: #35596b;
+}
+
+.tool-panel {
+  padding: 1rem;
+}
+
+.tool-panel-header,
+.editor-stage-header,
+.sidebar-section-header,
+.route-card header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tool-panel h2,
+.editor-stage h2,
+.analysis-sidebar h3 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.tool-panel-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.ghost-button,
+.tool-button,
+.property-field input,
+.property-field select {
+  border: 1px solid rgba(16, 36, 50, 0.14);
+}
+
+.ghost-button {
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--bg-ink);
+  cursor: pointer;
+}
+
+.ghost-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tool-button {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 96px;
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tool-button strong {
+  font-size: 1rem;
+}
+
+.tool-button span {
+  color: #46697a;
+  font-size: 0.92rem;
+}
+
+.tool-button.is-active {
+  border-color: rgba(229, 103, 58, 0.48);
+  background:
+    linear-gradient(180deg, rgba(255, 219, 205, 0.95), rgba(255, 245, 239, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(229, 103, 58, 0.16);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(310px, 0.9fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.workspace-main {
+  display: grid;
+  gap: 1rem;
+}
+
+.editor-stage {
+  padding: 1rem;
+}
+
+.viewer-stage {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 0 18px 40px rgba(22, 45, 57, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.editor-stage-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.editor-stage-status span {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.55rem 0.85rem;
+  color: #315567;
+  font-size: 0.92rem;
+}
+
+.editor-canvas {
+  width: 100%;
+  margin-top: 1rem;
+  display: block;
+  border-radius: 22px;
+  min-height: 560px;
+  overflow: hidden;
+}
+
+.viewer-shell {
+  position: relative;
+  margin-top: 1rem;
+  min-height: 360px;
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(233, 125, 72, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(241, 248, 250, 0.9));
+  border: 1px solid rgba(17, 46, 59, 0.1);
+}
+
+.viewer-canvas {
+  min-height: 360px;
+}
+
+.viewer-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  padding: 1.25rem;
+  text-align: center;
+  color: #315567;
+  background: rgba(248, 252, 254, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.viewer-overlay strong {
+  font-size: 1.05rem;
+}
+
+.viewer-legend {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.legend-chip {
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(17, 46, 59, 0.1);
+  color: #315567;
+  font-size: 0.88rem;
+}
+
+.legend-chip-critical {
+  background: rgba(255, 233, 224, 0.96);
+  color: #9f451f;
+}
+
+.canvas-surface {
+  fill: rgba(255, 255, 255, 0.72);
+}
+
+.grid-line {
+  stroke: rgba(21, 53, 69, 0.07);
+  stroke-width: 1;
+}
+
+.grid-line.is-major {
+  stroke: rgba(21, 53, 69, 0.16);
+}
+
+.duct-line {
+  stroke: rgba(44, 129, 156, 0.78);
+  stroke-linecap: round;
+}
+
+.duct-line.is-selected {
+  stroke: rgba(229, 103, 58, 0.92);
+}
+
+.duct-hit-area {
+  stroke: transparent;
+  stroke-width: 28;
+  cursor: pointer;
+}
+
+.duct-label,
+.endpoint-label,
+.node-label {
+  fill: var(--bg-deep);
+  font-size: 13px;
+  font-weight: 600;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.endpoint-marker {
+  fill: rgba(19, 76, 94, 0.92);
+  cursor: pointer;
+}
+
+.endpoint-marker.is-selected {
+  fill: rgba(229, 103, 58, 0.96);
+}
+
+.node-dot {
+  fill: rgba(16, 36, 50, 0.72);
+  stroke: white;
+  stroke-width: 3;
+  cursor: pointer;
+}
+
+.node-dot.is-selected {
+  fill: var(--accent);
+}
+
+.draft-line {
+  stroke: rgba(229, 103, 58, 0.9);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 18 10;
+}
+
+.hover-crosshair line {
+  stroke: rgba(229, 103, 58, 0.18);
+  stroke-width: 1;
+}
+
+.analysis-sidebar {
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.sidebar-section {
+  padding: 0.25rem 0;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.metric-grid article,
+.property-meta,
+.critical-card,
+.route-card,
+.balance-summary,
+.balance-group {
+  border: 1px solid rgba(17, 46, 59, 0.12);
+  border-radius: 18px;
+  background: var(--panel-strong);
+}
+
+.metric-grid article {
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.metric-grid span,
+.property-meta span,
+.route-card span,
+.balance-summary span,
+.balance-group span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.metric-grid strong {
+  font-size: 1.22rem;
+}
+
+.sidebar-empty,
+.sidebar-warning {
+  margin: 0.8rem 0 0;
+  color: #46697a;
+}
+
+.sidebar-warning {
+  color: #8d4e33;
+}
+
+.property-group {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.property-field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  color: #35596b;
+}
+
+.property-field input,
+.property-field select {
+  border-radius: 14px;
+  background: white;
+  padding: 0.75rem 0.8rem;
+  color: var(--bg-ink);
+}
+
+.property-meta {
+  padding: 0.75rem 0.85rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.critical-card {
+  padding: 1rem;
+  display: grid;
+  gap: 0.3rem;
+  background:
+    linear-gradient(180deg, rgba(255, 226, 213, 0.95), rgba(255, 244, 236, 0.95));
+}
+
+.critical-card strong {
+  font-size: 1.4rem;
+}
+
+.critical-card p,
+.route-card p {
+  margin: 0;
+  color: #35596b;
+  font-size: 0.92rem;
+}
+
+.balance-summary p,
+.balance-group p {
+  margin: 0;
+  color: #35596b;
+  font-size: 0.92rem;
+}
+
+.route-list {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.85rem;
+}
+
+.route-card {
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.route-card.is-critical {
+  border-color: rgba(229, 103, 58, 0.38);
+  box-shadow: inset 0 0 0 1px rgba(229, 103, 58, 0.1);
+}
+
+.balance-summary,
+.balance-group {
+  padding: 0.95rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.balance-summary strong,
+.balance-group header strong,
+.balance-branch strong {
+  font-size: 1.02rem;
+}
+
+.balance-summary-warning,
+.balance-group-warning {
+  border-color: rgba(229, 103, 58, 0.3);
+  background: linear-gradient(180deg, rgba(255, 239, 231, 0.94), rgba(255, 249, 245, 0.94));
+}
+
+.balance-summary-ok {
+  border-color: rgba(44, 129, 156, 0.2);
+  background: linear-gradient(180deg, rgba(233, 247, 250, 0.95), rgba(246, 251, 252, 0.95));
+}
+
+.balance-group-list,
+.balance-branch-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.balance-group header,
+.balance-branch {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.balance-branch {
+  padding: 0.8rem 0.85rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(17, 46, 59, 0.08);
+}
+
+.balance-branch div,
+.balance-branch-metrics {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.workflow-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.workflow-strip article {
+  padding: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.workflow-strip strong {
+  font-size: 1.15rem;
+}
+
+.workflow-strip span {
+  color: #35596b;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    width: min(100% - 1.25rem, 1100px);
+    padding-top: 2rem;
+  }
+
+  .lede {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .hero-editor,
+  .workspace,
+  .workflow-strip {
+    grid-template-columns: 1fr;
+  }
+}
